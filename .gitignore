@@ -7,6 +7,7 @@ __pycache__/
 cython_debug/
 
 # Virtual environments
+myenv/
 env/
 venv/
 ENV/
