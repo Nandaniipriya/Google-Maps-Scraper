@@ -1,109 +1,139 @@
 # Google Maps Scraper
 
-
+A powerful and user-friendly web scraper for Google Maps built with FastAPI and Streamlit. This tool allows you to easily extract business information from Google Maps search results.
 
 ## Features
-- Designed to be highly user-friendly for **beginners**.
-- User-friendly graphical interface for easy navigation and interaction. 😊
-- Scrapes various data from Google Maps, such as:
-  - **Category**
-  - **Name**
-  - **Phone Number**
-  - **Google Maps URL**
-  - **Website**
-  - **Email**
-  - **Address**
-  - **Total Reviews**
-  - **Rating**
-  - **Business Status**
-  - **Booking Links**
-  - **Hours**
-- Fast and efficient 🚀
 
+- 🌐 **Modern Web Interface** - Built with Streamlit for easy interaction
+- ⚡ **Fast API Backend** - Powered by FastAPI for efficient data processing
+- 🤖 **Headless Operation** - Runs in background without browser visibility
+- 📊 **Multiple Export Options** - Download data as CSV or JSON
+- 🔄 **Real-time Progress Updates** - See scraping progress as it happens
 
+### Data Points Scraped:
+- **Basic Info:**
+  - Business Name
+  - Category
+  - Address
+  - Phone Number
+  - Website URL
+- **Business Details:**
+  - Rating
+  - Total Reviews
+  - Business Status
+  - Operating Hours
+- **Additional Data:**
+  - Email Address (when available)
+  - Google Maps URL
+  - Booking Links (if applicable)
 
+## Installation
 
-## Note: 
-**Our all scrapers are working, if you find any issue or bug please open an issue with the detail of issue. We will try to resolve it quickly for you.**
+1. Clone the repository:
+```bash
+git clone https://github.com/Nandaniipriya/Google-Maps-Scraper.git
+cd Google-Maps-Scraper
+```
 
-<img src="Readme_assets/app.png" alt="Pingme open sourced google maps scraper">
+2. Install backend dependencies:
+```bash
+cd backend
+pip install -r requirements.txt
+```
 
-## Sample Data
-    {
-        "Category":"Shopping mall",
-        "Name":"Packages Mall",
-        "Phone":"(042) 111 696 255",
-        "Google Maps URL":"https:\/\/www.google.com\/maps\/place\/Packages+Mall\/data=!4m7!3m6!1s0x39190680e8f2d445:0x32ba63a1571efb2a!8m2!3d31.4715199!4d74.3555422!16s%2Fg%2F11gmxj94jy!19sChIJRdTy6IAGGTkRKvseV6FjujI?authuser=0&hl=en&rclk=1",
-        "Website":"http:\/\/www.packagesmall.com\/",
-        "email":"careers@packagesmall.com, info@packagesmall.com",
-        "Business Status":"Open\u22c5 Closes 10\u202fpm",
-        "Address":"Main Walton Rd, Shahrah-E-Roomi Nishtar Town, Lahore, Punjab 54750",
-        "Total Reviews":"(67,295)",
-        "Booking Links":null,
-        "Rating":"4.6",
-        "Hours":"Sunday11\u202fam\u201310\u202fpm\ue14dMonday11\u202fam\u201310\u202fpm\ue14dTuesday11\u202fam\u201310\u202fpm\ue14dWednesday11\u202fam\u201310\u202fpm\ue14dThursday11\u202fam\u201310\u202fpm\ue14dFriday11\u202fam\u201310\u202fpm\ue14dSaturday11\u202fam\u201310\u202fpm\ue14dSuggest new hours"
-    }
+3. Install frontend dependencies:
+```bash
+cd frontend
+pip install -r requirements.txt
+```
 
-## Getting Started
+## Usage
 
-To get started with the Google Maps Scraper, follow these steps:
+1. Start the FastAPI backend:
+```bash
+cd backend
+python app/main.py
+```
 
-### 1. Clone the repository to your local machine:
+2. Start the Streamlit frontend:
+```bash
+cd frontend
+streamlit run streamlit_app.py
+```
 
-   ```shell
-   git clone https://github.com/Nandaniipriya/Google-Maps-Scraper.git
-   cd Google-Maps-Scraper
-   ```
+3. Open your browser and navigate to:
+- Frontend: http://localhost:8501
+- API Documentation: http://localhost:8000/docs
 
-### 2. Setup the Environment for Scraper
+## Preview website
+![Google Maps Scraper Preview](assets/google.png)
 
-- For Windows, run:
-  ```bash
-  ./setup_win.cmd # or pip install -r requirements.txt
-   ```
-- For Linux, run:
-   ```
-   ./setup_linux.sh
-   ```
+## Sample Response
 
-   It will auto install the dependencies
+```json
+{
+    "total_results": 1,
+    "locations": [
+        {
+            "category": "Shopping mall",
+            "name": "Example Mall",
+            "phone": "(123) 456-7890",
+            "google_maps_url": "https://www.google.com/maps/place/...",
+            "website": "http://www.examplemall.com",
+            "email": "info@examplemall.com",
+            "business_status": "Open",
+            "address": "123 Example Street, City, State 12345",
+            "total_reviews": "(1,234)",
+            "rating": "4.5",
+            "hours": "Monday-Sunday: 10:00 AM - 9:00 PM"
+        }
+    ]
+}
+```
 
-### 3. Run the scraper:
-   ```shell
-   python app/run.py
-   ```
+## Technical Details
 
+- **Backend:** FastAPI + Selenium
+- **Frontend:** Streamlit
+- **Scraping:** Python + BeautifulSoup4
+- **Database:** No local storage (data returned directly)
+
+## Configuration
+
+The scraper can be configured through environment variables:
+- `PORT`: API port (default: 8000)
+- `HOST`: API host (default: 0.0.0.0)
+- `HEADLESS`: Browser mode (default: 1 for headless)
+
+## Error Handling
+
+The scraper includes robust error handling for:
+- Network issues
+- Rate limiting
+- Invalid queries
+- Missing data fields
 
 ## Contributing
 
-We welcome contributions from the open-source community to enhance the Google Maps Scraper tool. If you would like to contribute, please follow these steps:
-
-1. Fork the repository.
-
-2. Create a new branch for your feature or bug fix.
-
-3. Make your changes and commit them with descriptive commit messages.
-
-4. Push your changes to your forked repository.
-
-5. Create a pull request to the `development` branch of the repository.
-
-6. Wait for the code review and address any feedback received.
-
-7. You can also contribute by updating the readme.md.
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## License
 
-The Google Maps Scraper tool is open-source software licensed under the [GNU GENERAL PUBLIC LICENSE](https://github.com/Nandaniipriya/Google-Maps-Scraper/blob/main/LICENSE) 📜
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
 
-## Support
+## Acknowledgments
 
-If you encounter any issues or have any questions or suggestions, please feel free to open an issue. We appreciate your feedback and are here to assist you.
+- Built with FastAPI and Streamlit
+- Uses Selenium for web automation
+- BeautifulSoup4 for HTML parsing
 
-`Developed with Love for you ✨`
+## Disclaimer
 
-## Buy me a coffee☕
+This tool is for educational purposes only. Please check and comply with Google's terms of service before using this scraper.
 
-If you find my Google Maps scraper project helpful, consider supporting me with a coffee! Your contribution will help fuel late-night coding sessions and keep the code flowing. Every coffee is greatly appreciated and goes a long way in supporting the development of more useful tools and resources. Thank you for your generosity!
-
-[![Buy Me A Coffee](https://img.buymeacoffee.com/button-api/?slug=zubdata&button_colour=FFDD00&font_colour=000000&font_family=Lato&outline_colour=000000&coffee_colour=ffffff)]()
+---
+Developed by [Nandani Priya]
