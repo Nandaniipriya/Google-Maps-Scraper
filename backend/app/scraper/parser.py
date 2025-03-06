@@ -1,15 +1,10 @@
 from bs4 import BeautifulSoup
-from scraper.error_codes import ERROR_CODES
-from scraper.communicator import Communicator
-from scraper.datasaver import DataSaver
 from scraper.base import Base
 from scraper.common import Common
 import requests
 import re
 
-
 class Parser(Base):
-
     def __init__(self, driver) -> None:
         self.driver = driver
         self.finalData = []
@@ -20,238 +15,139 @@ class Parser(Base):
             "booking": "Open booking link",
         }
 
-    def init_data_saver(self):
-        self.data_saver = DataSaver()
-
     def parse(self):
-        """Our function to parse the html"""
-
-        """This block will get element details sheet of a business. 
-        Details sheet means that business details card when you click on a business in 
-        serach results in google maps"""
-
-        infoSheet = self.driver.execute_script(
-            """return document.querySelector("[role='main']")"""
-        )
         try:
-            # Initialize data points
-            (
-                rating,
-                totalReviews,
-                address,
-                websiteUrl,
-                email,
-                phone,
-                hours,
-                category,
-                gmapsUrl,
-                bookingLink,
-                businessStatus,
-            ) = (None, None, None, None, None, None, None, None, None, None, None)
-
+            infoSheet = self.driver.execute_script(
+                """return document.querySelector("[role='main']")"""
+            )
+            
+            if not infoSheet:
+                print("Info sheet not found, skipping...")
+                return
+                
             html = infoSheet.get_attribute("outerHTML")
+            if not html:
+                print("No HTML content found, skipping...")
+                return
+                
             soup = BeautifulSoup(html, "html.parser")
 
-            # Extract rating
-            try:
-                rating = soup.find("span", class_="ceNzKf").get("aria-label")
-                rating = rating.replace("stars", "").strip()
-            except:
-                rating = None
-
-            # Extract total reviews
-            try:
-                totalReviews = list(soup.find("div", class_="F7nice").children)
-                totalReviews = totalReviews[1].get_text(strip=True)
-            except:
-                totalReviews = None
-
-            # Extract name
-            try:
-                name = soup.select_one(".tAiQdd h1.DUwDvf").text.strip()
-            except:
-                name = None
-
-            # Extract address, website, phone, and appointment link
-            allInfoBars = soup.find_all("button", class_="CsEnBe")
-            for infoBar in allInfoBars:
-                data_tooltip = infoBar.get("data-tooltip")
-                text = infoBar.find("div", class_="rogA2c").text.strip()
-
-                if data_tooltip == self.comparing_tool_tips["location"]:
-                    address = text
-
-                elif data_tooltip == self.comparing_tool_tips["phone"]:
-                    phone = text.strip()
-
-            # Extract website URL
-            try:
-                websiteTag = soup.find(
-                    "a", {"aria-label": lambda x: x and "Website:" in x}
-                )
-                if websiteTag:
-                    websiteUrl = websiteTag.get("href")
-
-            except:
-                websiteUrl = None
-            # Extract Email
-            try:
-                if websiteUrl:
-                    email = self.find_mail(websiteUrl)
-            except:
-                email = None
-
-            # Extract booking link
-            try:
-                bookingTag = soup.find(
-                    "a", {"aria-label": lambda x: x and "Open booking link" in x}
-                )
-                if bookingTag:
-                    bookingLink = bookingTag.get("href")
-            except:
-                bookingLink = None
-
-            # Extract hours of operation
-            try:
-                hours = soup.find("div", class_="t39EBf").get_text(strip=True)
-            except:
-                hours = None
-
-            # Extract category
-            try:
-                category = soup.find("button", class_="DkEaL").text.strip()
-            except:
-                category = None
-
-            # Extract Google Maps URL
-            try:
-                gmapsUrl = self.driver.current_url
-            except:
-                gmapsUrl = None
-
-            # Extract business status
-            try:
-                businessStatus = (
-                    soup.find("span", class_="ZDu9vd")
-                    .findChildren("span", recursive=False)[0]
-                    .get_text(strip=True)
-                )
-            except:
-                businessStatus = None
-
+            # Initialize data dictionary with default values
             data = {
-                "Category": category,
-                "Name": name,
-                "Phone": phone,
-                "Google Maps URL": gmapsUrl,
-                "Website": websiteUrl,
-                "email": email,
-                "Business Status": businessStatus,
-                "Address": address,
-                "Total Reviews": totalReviews,
-                "Booking Links": bookingLink,
-                "Rating": rating,
-                "Hours": hours,
+                "Category": None,
+                "Name": None,
+                "Phone": None,
+                "Google Maps URL": None,
+                "Website": None,
+                "email": None,
+                "Business Status": None,
+                "Address": None,
+                "Total Reviews": None,
+                "Booking Links": None,
+                "Rating": None,
+                "Hours": None
             }
+
+            # Extract data points with better error handling
+            try:
+                name_elem = soup.select_one(".tAiQdd h1.DUwDvf")
+                if name_elem:
+                    data["Name"] = name_elem.text.strip()
+            except Exception as e:
+                print(f"Error extracting name: {e}")
+
+            try:
+                data["Rating"] = soup.find("span", class_="ceNzKf").get("aria-label").replace("stars", "").strip()
+            except: pass
+
+            try:
+                reviews = list(soup.find("div", class_="F7nice").children)
+                data["Total Reviews"] = reviews[1].get_text(strip=True)
+            except: pass
+
+            # Extract address, phone from info bars
+            for infoBar in soup.find_all("button", class_="CsEnBe"):
+                tooltip = infoBar.get("data-tooltip")
+                text = infoBar.find("div", class_="rogA2c").text.strip()
+                
+                if tooltip == self.comparing_tool_tips["location"]:
+                    data["Address"] = text
+                elif tooltip == self.comparing_tool_tips["phone"]:
+                    data["Phone"] = text
+
+            # Extract website and email
+            try:
+                website_tag = soup.find("a", {"aria-label": lambda x: x and "Website:" in x})
+                if website_tag:
+                    data["Website"] = website_tag.get("href")
+                    data["email"] = self.find_mail(data["Website"])
+            except: pass
+
+            # Extract remaining fields
+            try:
+                data["Hours"] = soup.find("div", class_="t39EBf").get_text(strip=True)
+            except: pass
+
+            try:
+                data["Category"] = soup.find("button", class_="DkEaL").text.strip()
+            except: pass
+
+            try:
+                data["Google Maps URL"] = self.driver.current_url
+            except: pass
+
+            try:
+                data["Business Status"] = soup.find("span", class_="ZDu9vd").findChildren("span", recursive=False)[0].get_text(strip=True)
+            except: pass
 
             self.finalData.append(data)
 
         except Exception as e:
-            Communicator.show_error_message(
-                f"Error occurred while parsing a location. Error is: {str(e)}",
-                ERROR_CODES["ERR_WHILE_PARSING_DETAILS"],
-            )
+            print(f"Error parsing location: {str(e)}")
 
-    # find email
     def find_mail(self, url):
+        if not url:
+            return None
+            
         try:
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
             }
-            source_code = requests.get(url, headers=headers, timeout=(10))
-            curr = source_code.url
-
-            original_curr = curr
-            plain_text = source_code.text
-            match = re.findall(
-                r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", plain_text
-            )
-
-            if not match:
-                urls = [original_curr + "/contact/", original_curr + "/Contact/"]
-                for cu in urls:
-                    curr = cu
-                    source_code = requests.get(url, headers=headers, timeout=(10))
-                    plain_text = source_code.text
-                    match = re.findall(
-                        r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", plain_text
-                    )
-
-                    if match:
-                        break
-
-            if not match:
-                match = re.findall(
-                    r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", original_curr
-                )
-
-            if not match:
-
-                if self.driver is None:
-                    Communicator.show_message("Error: WebDriver failed to initialize.")
-                    return ""
-
-                self.driver.get(original_curr)
-                plain_text = self.driver.page_source
-                match = re.findall(
-                    r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", plain_text
-                )
-
-                if not match:
-                    urls = [original_curr + "/contact/", original_curr + "/Contact/"]
-                    for cu in urls:
-                        self.driver.get(cu)
-                        plain_text = self.driver.page_source
-                        match = re.findall(
-                            r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
-                            plain_text,
-                        )
-
-                        if match:
+            response = requests.get(url, headers=headers, timeout=10)
+            text = response.text
+            
+            emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", text)
+            
+            if not emails:
+                # Try contact page
+                contact_urls = [f"{url.rstrip('/')}/contact", f"{url.rstrip('/')}/contact-us"]
+                for contact_url in contact_urls:
+                    try:
+                        response = requests.get(contact_url, headers=headers, timeout=10)
+                        emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", response.text)
+                        if emails:
                             break
+                    except:
+                        continue
 
-                # self.driver.quit()
-
-            match = [
-                email
-                for email in set(match)
-                if re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$", email)
+            # Validate and clean emails
+            valid_emails = [
+                email for email in set(emails)
+                if re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email)
             ]
-            email = ", ".join(match)
-            return email
+            
+            return ", ".join(valid_emails) if valid_emails else None
 
         except Exception as e:
-            Communicator.show_message(f"Error in find_mail: {e}")
-        return ""
+            print(f"Error finding email: {str(e)}")
+            return None
 
     def main(self, allResultsLinks):
-        Communicator.show_message(
-            "Scrolling is done. Now going to scrape each location"
-        )
         try:
             for resultLink in allResultsLinks:
                 if Common.close_thread_is_set():
-                    self.driver.quit()
                     return
-
                 self.openingurl(url=resultLink)
                 self.parse()
-
         except Exception as e:
-            Communicator.show_message(
-                f"Error occurred while parsing the locations. Error: {str(e)}"
-            )
-
-        finally:
-            self.init_data_saver()
-            self.data_saver.save(datalist=self.finalData)
+            print(f"Error processing results: {str(e)}")

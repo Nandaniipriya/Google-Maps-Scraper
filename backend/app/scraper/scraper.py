@@ -1,126 +1,101 @@
-"""
-This module contain the code for backend,
-that will handle scraping process
-"""
-
 from time import sleep
 from scraper.base import Base
 from scraper.scroller import Scroller
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from settings import DRIVER_EXECUTABLE_PATH
-from scraper.communicator import Communicator
+from webdriver_manager.chrome import ChromeDriverManager
+import tempfile
 
 
 class Backend(Base):
-    
-
-    def __init__(self, searchquery, outputformat,  healdessmode):
+    def __init__(self, searchquery: str, outputformat: str, healdessmode: int):
+        """Initialize the scraper backend
+        Args:
+            searchquery (str): Search query for Google Maps
+            outputformat (str): Format of output (json)
+            healdessmode (int): Whether to run in headless mode (1=headless, 0=visible)
         """
-        params:
-
-        search query: it is the value that user will enter in search query entry 
-        outputformat: output format of file , selected by user
-        outputpath: directory path where file will be stored after scraping
-        headlessmode: it's value can be 0 and 1, 0 means unchecked box and 1 means checked
-
-        """
-
-
-        self.searchquery = searchquery  # search query that user will enter
-        
-        # it is a function used as api for transfering message form this backend to frontend
-
+        self.searchquery = searchquery
         self.headlessMode = healdessmode
-
         self.init_driver()
         self.scroller = Scroller(driver=self.driver)
-        self.init_communicator()
 
-    def init_communicator(self):
-        Communicator.set_backend_object(self)
-
-
-    def init_driver(self):
+    def init_driver(self) -> None:
+        """Initialize the Chrome WebDriver with appropriate options"""
         options = webdriver.ChromeOptions()
+        
+        # Headless mode with proper hardware acceleration disabled
         if self.headlessMode == 1:
-            options.headless = True
-    
-        # Add these options to fix deployment issues
+            options.add_argument('--headless=new')
+            options.add_argument('--disable-gpu')
+            options.add_argument('--disable-software-rasterizer')
+            
+        # Essential options
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
-        options.add_argument('--disable-gpu')
-        options.add_argument('--disable-software-rasterizer')
-        options.add_argument('--remote-debugging-port=9222')
+        options.add_argument('--disable-web-security')
+        options.add_argument('--allow-running-insecure-content')
         
-        # Add a unique temporary user data directory
-        import tempfile
-        user_data_dir = tempfile.mkdtemp()
-        options.add_argument(f'--user-data-dir={user_data_dir}')
+        # Disable problematic features
+        options.add_argument('--disable-webgl')
+        options.add_argument('--disable-notifications')
+        options.add_argument('--disable-popup-blocking')
+        options.add_argument('--disable-infobars')
+        options.add_argument('--disable-extensions')
         
-        # Existing preferences
-        prefs = {"profile.managed_default_content_settings.images": 2}
+        # Error handling and logging
+        options.add_argument('--disable-logging')
+        options.add_argument('--log-level=3')
+        options.add_argument('--silent')
+        
+        # Performance settings
+        prefs = {
+            "profile.managed_default_content_settings.images": 2,
+            "profile.default_content_setting_values.notifications": 2,
+            "profile.managed_default_content_settings.javascript": 1,
+            "profile.managed_default_content_settings.cookies": 1,
+            "profile.managed_default_content_settings.plugins": 2,
+            "profile.managed_default_content_settings.popups": 2,
+            "profile.managed_default_content_settings.geolocation": 2,
+            "profile.managed_default_content_settings.media_stream": 2,
+        }
         options.add_experimental_option("prefs", prefs)
-    
-        Communicator.show_message("Wait checking for driver...\nIf you don't have webdriver in your machine it will install it")
-    
-        try:
-            if DRIVER_EXECUTABLE_PATH is not None:
-                service = Service(executable_path=DRIVER_EXECUTABLE_PATH)
-                self.driver = webdriver.Chrome(service=service, options=options)
-            else:
-                # Selenium Manager will automatically obtain the proper chromedriver
-                self.driver = webdriver.Chrome(options=options)
-        except Exception as e:
-            Communicator.show_message(f"Error initializing driver: {e}")
-            raise
+        options.add_experimental_option('excludeSwitches', ['enable-logging', 'enable-automation'])
+        options.add_experimental_option('useAutomationExtension', False)
         
-        Communicator.show_message("Opening browser...")
-        self.driver.maximize_window()
-        self.driver.implicitly_wait(self.timeout)
-
-
-
-    def mainscraping(self):
-
         try:
+            service = Service(ChromeDriverManager().install())
+            self.driver = webdriver.Chrome(service=service, options=options)
+            self.driver.set_page_load_timeout(30)
+            self.driver.implicitly_wait(10)
+        except Exception as e:
+            print(f"Error initializing driver: {e}")
+            raise
+
+    def mainscraping(self) -> None:
+        """Main scraping process"""
+        try:
+            # Format search query for URL
             querywithplus = "+".join(self.searchquery.split())
-
-            """
-            link of page variable contains the link of page of google maps that user wants to scrape.
-            We have make it by inserting search query in it
-            """
-
             link_of_page = f"https://www.google.com/maps/search/{querywithplus}/"
 
-            # ==========================================
-
+            # Open page and start scraping
             self.openingurl(url=link_of_page)
-
-            Communicator.show_message("Working start...")
-
-            sleep(1)
-
-            self.scroller.scroll()
+            sleep(2)
             
+            # Perform scroll and parse
+            if hasattr(self, 'scroller'):
+                self.scroller.scroll()
+            else:
+                raise Exception("Scroller not initialized")
 
         except Exception as e:
-            """
-            Handling all errors.If any error occurs like user has closed the self.driver and if 'no such window' error occurs
-            """
-            Communicator.show_message(f"Error occurred while scraping. Error: {str(e)}")
-
+            print(f"Error occurred while scraping: {str(e)}")
+            raise
 
         finally:
-            try:
-                Communicator.show_message("Closing the driver")
-                self.driver.close()
-                self.driver.quit()
-            except:  # if browser is always closed due to error
-                pass
-
-            Communicator.end_processing()
-            Communicator.show_message("Now you can start another session")
-
-
-
+            if hasattr(self, 'driver'):
+                try:
+                    self.driver.quit()
+                except:  # If browser is already closed
+                    pass
