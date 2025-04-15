@@ -77,7 +77,6 @@ async def scrape_google_maps(search: SearchQuery):
         )
         
     finally:
-        # Ensure cleanup happens
         if scraper:
             try:
                 Common.set_close_thread()
