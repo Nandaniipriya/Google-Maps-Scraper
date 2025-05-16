@@ -29,7 +29,7 @@ class Backend(Base):
             options.add_argument('--headless=new')
             options.add_argument('--disable-gpu')
             options.add_argument('--disable-software-rasterizer')
-            
+        
         # Essential options
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
@@ -53,49 +53,4 @@ class Backend(Base):
             "profile.managed_default_content_settings.images": 2,
             "profile.default_content_setting_values.notifications": 2,
             "profile.managed_default_content_settings.javascript": 1,
-            "profile.managed_default_content_settings.cookies": 1,
-            "profile.managed_default_content_settings.plugins": 2,
-            "profile.managed_default_content_settings.popups": 2,
-            "profile.managed_default_content_settings.geolocation": 2,
-            "profile.managed_default_content_settings.media_stream": 2,
-        }
-        options.add_experimental_option("prefs", prefs)
-        options.add_experimental_option('excludeSwitches', ['enable-logging', 'enable-automation'])
-        options.add_experimental_option('useAutomationExtension', False)
-        
-        try:
-            service = Service(ChromeDriverManager().install())
-            self.driver = webdriver.Chrome(service=service, options=options)
-            self.driver.set_page_load_timeout(30)
-            self.driver.implicitly_wait(10)
-        except Exception as e:
-            print(f"Error initializing driver: {e}")
-            raise
-
-    def mainscraping(self) -> None:
-        """Main scraping process"""
-        try:
-            # Format search query for URL
-            querywithplus = "+".join(self.searchquery.split())
-            link_of_page = f"https://www.google.com/maps/search/{querywithplus}/"
-
-            # Open page and start scraping
-            self.openingurl(url=link_of_page)
-            sleep(2)
-            
-            # Perform scroll and parse
-            if hasattr(self, 'scroller'):
-                self.scroller.scroll()
-            else:
-                raise Exception("Scroller not initialized")
-
-        except Exception as e:
-            print(f"Error occurred while scraping: {str(e)}")
-            raise
-
-        finally:
-            if hasattr(self, 'driver'):
-                try:
-                    self.driver.quit()
-                except:  # If browser is already closed
-                    pass
+            "profile.managed_default_content_setting

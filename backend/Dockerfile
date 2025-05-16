@@ -4,8 +4,8 @@ WORKDIR /app
 
 # Install Chromium and dependencies
 RUN apt-get update && apt-get install -y \
-    chromium-driver \
     chromium \
+    chromium-driver \
     fonts-liberation \
     libasound2 \
     libatk-bridge2.0-0 \
