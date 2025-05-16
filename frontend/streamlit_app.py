@@ -13,7 +13,7 @@ st.set_page_config(
 )
 
 # Constants
-API_URL = "http://localhost:8000"
+API_URL = "https://google-maps-scraper-j2r2.onrender.com"
 DEFAULT_QUERY = "paper cup manufactures in jaipur"
 
 def search_places(query: str, progress_bar) -> Dict:
