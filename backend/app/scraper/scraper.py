@@ -53,4 +53,28 @@ class Backend(Base):
             "profile.managed_default_content_settings.images": 2,
             "profile.default_content_setting_values.notifications": 2,
             "profile.managed_default_content_settings.javascript": 1,
-            "profile.managed_default_content_setting
+            "profile.managed_default_content_settings.cookies": 1,
+            "profile.managed_default_content_settings.plugins": 2,
+            "profile.managed_default_content_settings.popups": 2,
+            "profile.managed_default_content_settings.geolocation": 2,
+            "profile.managed_default_content_settings.media_stream": 2
+        }
+        options.add_experimental_option("prefs", prefs)
+        options.add_experimental_option('excludeSwitches', ['enable-logging', 'enable-automation'])
+        options.add_experimental_option('useAutomationExtension', False)
+
+        # Set driver service
+        service = Service(ChromeDriverManager().install())
+
+        # Initialize the driver
+        self.driver = webdriver.Chrome(service=service, options=options)
+    
+    def run(self) -> None:
+        """Run the scraper"""
+        self.driver.get(f"https://www.google.com/maps/search/{self.searchquery}")
+        sleep(2)
+        self.scroller.scroll_down()
+        sleep(2)
+        self.scroller.scroll_up()
+        sleep(2)
+        self.driver.quit()
