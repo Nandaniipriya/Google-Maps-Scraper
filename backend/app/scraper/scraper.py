@@ -63,18 +63,16 @@ class Backend(Base):
         options.add_experimental_option('excludeSwitches', ['enable-logging', 'enable-automation'])
         options.add_experimental_option('useAutomationExtension', False)
 
+        # *** THIS LINE IS REQUIRED FOR RENDER ***
+        options.binary_location = "/usr/bin/chromium"
+
         # Set driver service
         service = Service(ChromeDriverManager().install())
 
         # Initialize the driver
         self.driver = webdriver.Chrome(service=service, options=options)
     
-    def run(self) -> None:
-        """Run the scraper"""
-        self.driver.get(f"https://www.google.com/maps/search/{self.searchquery}")
-        sleep(2)
-        self.scroller.scroll_down()
-        sleep(2)
-        self.scroller.scroll_up()
-        sleep(2)
-        self.driver.quit()
+    def scrape(self) -> None:
+        """Perform the scraping operation"""
+        # Your scraping logic here
+        pass
